@@ -1,0 +1,30 @@
+* {
+  margin : 0;
+  padding : 0;
+  box-sizing: border-box;
+}
+
+body{
+  font-family: "Roboto", "sans-serif";
+  background-color: #FFFFF0;
+  color: #333;
+}
+.join-container{
+  background : linear-gradient(135deg , #F0BB78 0% , #009990 100%);
+
+  .join-form{
+    background-color: #FFFFF0;
+    padding : 3rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 6px rgba(0,0,0,0.4);
+    text-align: justify;
+    width: 300px;
+
+    h1{
+      
+      margin-bottom: 1.5rem;
+    }
+
+
+  }
+}
