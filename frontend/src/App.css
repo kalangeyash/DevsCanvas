@@ -4,6 +4,7 @@
   box-sizing: border-box;
 }
 
+
 body{
   font-family: "Roboto", "sans-serif";
   background-color: #FFFFF0;
@@ -18,7 +19,7 @@ body{
     border-radius: 10px;
     box-shadow: 0 5px 6px rgba(0,0,0,0.4);
     text-align: justify;
-    width: 300px;
+    width: 400px;
 
     h1{
       
