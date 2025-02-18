@@ -1,6 +1,5 @@
 import  io  from 'socket.io-client'
 import './App.css'
-// import MyCard from './components/MyCard'
 import { ThemeProvider } from "@/components/theme-provider"
 import { useState } from 'react';
 import Editor from '@monaco-editor/react'
@@ -13,16 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+
 import {
   Sidebar,
   SidebarContent,
-  // SidebarFooter,
   SidebarGroup,
-  // SidebarHeader,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
 } from "@/components/ui/sidebar"
+
 import {
   Select,
   SelectContent,
@@ -37,14 +36,14 @@ import { Button } from "@/components/ui/button"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
 
-
-
 const socket = io(`http://localhost:5080`);
 function App() {
 
   const [joined,setJoined] = useState(true)
   const [roomId, setRoomId] = useState("")
   const[userName,setUserName] = useState("")
+  const [language,setLanguage] = useState("javascript")
+  const [code,setCode] = useState("")
 
   const joinRoom = () =>{
     if (roomId && userName) {
@@ -86,14 +85,12 @@ function App() {
               }}/>
             </div>
             <div className="flex flex-col space-y-1.5">
-              {/* <Label htmlFor="framework">Framework</Label>
-              */}
             </div>
           </div>
         </form>
       </CardContent>
       <CardFooter className="flex flex-col space-y-1.5 ">
-        {/* <Button variant="outline">Cancel</Button> */}
+        
         <Button onClick={joinRoom}>Join Room</Button>
       </CardFooter>
     </Card>
@@ -107,11 +104,17 @@ function App() {
   const leaveRoom = () =>{
 
   }
+  const handleCodeChange = (newCode = "")=>{
+    setCode(newCode)
+  }
   return(  
     
-      <div className='bg-slate-950 w-screen'>
-        
-        <div>
+      <div className=' w-screen h-screen px-24'>
+        <Editor height={"100%"} defaultLanguage={language} language={language} value={code} onChange={handleCodeChange} theme='vs-dark' options={{
+          minimap :{enabled : false},
+          fontSize : 14 ,
+        }} loading />
+        <div> 
         <SidebarProvider>
       <Sidebar className="w-[350px]">
       <SidebarContent>
@@ -163,11 +166,7 @@ function App() {
       </SidebarContent> 
     </Sidebar>
     </SidebarProvider>
-      </div> 
-      <div className='bg-violet-950'>
-
-        dghj
-        </div>  
+      </div>  
       </div>
 )
 }
