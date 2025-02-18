@@ -10,7 +10,6 @@ function UserNotJoined() {
     <div>            
       <Terminal className='h-[350px] w-screen'> 
           <TypingAnimation>&gt; Welcome to DevsCanvas</TypingAnimation>
-     
           <AnimatedSpan delay={1500} className="text-green-500 pt-5">
             <span> Preflight checks. ✔</span>
           </AnimatedSpan>
@@ -29,9 +28,8 @@ function UserNotJoined() {
           <AnimatedSpan delay={5000} className="text-red-500  pt-3">
             <span> Try again Later . </span>
           </AnimatedSpan>
-     
-          
-        </Terminal></div>
+        </Terminal>  
+      </div>
   )
 }
 

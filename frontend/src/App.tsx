@@ -1,9 +1,9 @@
 import  io  from 'socket.io-client'
 import './App.css'
-import MyCard from './components/MyCard'
+// import MyCard from './components/MyCard'
 import { ThemeProvider } from "@/components/theme-provider"
 import { useState } from 'react';
-import UserNotJoined from './components/userNotJoined';
+
 import {
   Card,
   CardContent,
@@ -15,33 +15,35 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-
-
-
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 
 
 
 const socket = io(`http://localhost:5080`);
 function App() {
 
-  const [joined,setJoined] = useState(false)
+  const [joined,setJoined] = useState(true)
   const [roomId, setRoomId] = useState("")
   const[userName,setUserName] = useState("")
+
+  const joinRoom = () =>{
+    if (roomId && userName) {
+      socket.emit("join", { roomId, userName });
+      setJoined(true);
+    }
+  }
   
 
   if(!joined)
   {
     return (
-      <div className='flex justify-center mt-40'>
-            <ThemeProvider  defaultTheme="dark" storageKey="vite-ui-theme">
-                <UserNotJoined/>
-          </ThemeProvider>
-    </div>
-      )
-  }
-  
-  return(      
-  <div className='flex justify-center mt-40'>
+    //   <div className='flex justify-center mt-40'>
+    //         <ThemeProvider  defaultTheme="dark" storageKey="vite-ui-theme">
+    //             <UserNotJoined/>
+    //       </ThemeProvider>
+    // </div>
+    <div className='flex justify-center mt-40'>
     <ThemeProvider  defaultTheme="dark" storageKey="vite-ui-theme">
     <Card className="w-[400px] h-[450px]">
       <CardHeader>
@@ -72,11 +74,21 @@ function App() {
       </CardContent>
       <CardFooter className="flex flex-col space-y-1.5 ">
         {/* <Button variant="outline">Cancel</Button> */}
-        <Button >Join Room</Button>
+        <Button onClick={joinRoom}>Join Room</Button>
       </CardFooter>
     </Card>
   </ThemeProvider>
-</div>)
+</div>
+      )
+  }
+  
+  return(  
+    
+      <SidebarProvider>
+      <AppSidebar />
+    </SidebarProvider>  
+  
+)
 }
 
 export default App
