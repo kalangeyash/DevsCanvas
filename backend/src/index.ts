@@ -34,7 +34,7 @@ io.on("connection", (socket) => {
       socket.leave(currentRoom);
       rooms.get(currentRoom)?.delete(currentUser!);
       io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
-      
+
     }
 
     currentRoom = roomId;
@@ -48,22 +48,34 @@ io.on("connection", (socket) => {
 
     rooms.get(roomId)?.add(userName);
     io.to(roomId).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
-    console.log("user joined", roomId)
+    // console.log("user joined", roomId)
   });
 
   socket.on("codeChange", ({ roomId, code }: { roomId: string; code: string }) => {
     socket.to(roomId).emit("codeUpdate", code);
   });
-
   socket.on("leaveRoom", () => {
     if (currentRoom && currentUser) {
-      rooms.get(currentRoom)?.delete(currentUser);
-      io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
+      const roomUsers: Set<string> | undefined = rooms.get(currentRoom);
+      
+      if (roomUsers) {
+        roomUsers.delete(currentUser);
+        io.to(currentRoom).emit("userJoined", Array.from(roomUsers));
+        
+        // Remove empty rooms to free memory
+        if (roomUsers.size === 0) {
+          rooms.delete(currentRoom);
+        }
+      }
+  
       socket.leave(currentRoom);
+  
+      // Reset user state after leaving
       currentRoom = null;
       currentUser = null;
     }
   });
+  
 
   socket.on("typing", ({ roomId, userName }: { roomId: string; userName: string }) => {
     socket.to(roomId).emit("userTyping", userName);

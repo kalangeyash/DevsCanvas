@@ -1,7 +1,7 @@
 import  io  from 'socket.io-client'
 import './App.css'
 import { ThemeProvider } from "@/components/theme-provider"
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react'
 
 import {
@@ -35,15 +35,53 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
-
 const socket = io(`http://localhost:5080`);
 function App() {
 
-  const [joined,setJoined] = useState(true)
+  const [joined,setJoined] = useState(false)
   const [roomId, setRoomId] = useState("")
   const[userName,setUserName] = useState("")
   const [language,setLanguage] = useState("javascript")
   const [code,setCode] = useState("")
+  const [copySuccess,setCopySuccess] = useState("")
+  const [users,setUsers] = useState([]);
+  const [typing,setTyping] = useState("")
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+
+useEffect(()=>{
+  socket.on("userJoined",(users)=>{
+    setUsers(users)
+  })
+  
+  socket.on("codeUpdate",(newCode) =>{
+    setCode(newCode);
+  })
+  socket.on("userTyping", (user: string) => {
+    if (!user) return;
+  
+    setTyping(`${user} is typing...`);
+  
+    // Clear previous timeout before setting a new one
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
+  
+    typingTimeout.current = setTimeout(() => {
+      setTyping("");
+    }, 1000);
+  })
+  return ()=>{
+    socket.off("userJoined")
+    socket.off("codeUpdate")
+    socket.off("userTyping")
+  }
+},[])
+
+useEffect(()=>{
+  const handleBeforeunload = ()=>{
+    socket.emit("leaveRoom");
+
+    window.addEventListener("beforeunload" ,handleBeforeunload)
+  }
+},[])
 
   const joinRoom = () =>{
     if (roomId && userName) {
@@ -51,6 +89,21 @@ function App() {
       setJoined(true);
     }
   }
+  const copyRoomId = () =>{
+    navigator.clipboard.writeText(roomId)
+    setCopySuccess("Copied!")
+    setTimeout(()=>{
+     setCopySuccess(" ")
+    },2000)
+ }
+ const leaveRoom = () =>{
+
+ }
+ const handleCodeChange = (newCode = "")=>{
+   setCode(newCode)
+   socket.emit("codeChange",{roomId,code:newCode})
+   socket.emit("typing",{roomId,userName})
+ }
   
 
 
@@ -98,25 +151,18 @@ function App() {
 </div>
       )
   }
-  const copyRoomId = () =>{
-     
-  }
-  const leaveRoom = () =>{
 
-  }
-  const handleCodeChange = (newCode = "")=>{
-    setCode(newCode)
-  }
   return(  
     
-      <div className=' w-screen h-screen px-24'>
-        <Editor height={"100%"} defaultLanguage={language} language={language} value={code} onChange={handleCodeChange} theme='vs-dark' options={{
+      <div className='h-max '>
+        <Editor className='w-max h-screen -mt-8 mx-1.5' width={1460} height={"100%"} defaultLanguage={language} language={language} value={code} onChange={handleCodeChange} theme='vs-dark' options={{
           minimap :{enabled : false},
           fontSize : 14 ,
-        }} loading />
+        }} loading/>
+
         <div> 
         <SidebarProvider>
-      <Sidebar className="w-[350px]">
+      <Sidebar className="w-[300px]">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>DevsCanvas</SidebarGroupLabel>
@@ -127,33 +173,41 @@ function App() {
               <Button className='mx-16 m-4' onClick={copyRoomId} >
                 Copy Id
               </Button>
+              {copySuccess &&<span className='text-green-400'>{copySuccess}</span>}
             </div>
             <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
             <div className='p-2'>
               <p className='text-xl pb-4'>Users in Room</p>
               <ul className='text-lg p-4'>
-                <li>YASH</li>
-                <li>Aditya</li>
-                <li>KAMNA</li>
+                  {/* <li>YASH</li>
+                  <li>Aditya</li>
+                  <li>KAMNA</li> */}
+                  {
+                    users.map((user,index)=>(
+                      <li key={index}>
+                        {user}
+                      </li>
+                    ))
+                  }
               </ul>
             </div>
             <div>
               <p>
-                User typing...
+                {typing}
               </p>
             </div>
             <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-            <div className='px-20'>
-            <Select>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent >
-                <SelectItem value="javascript">JavaScript</SelectItem>
-                <SelectItem value="python">Python</SelectItem>
-                <SelectItem value="java">Java</SelectItem>
-                <SelectItem value="cpp">C++</SelectItem>
-              </SelectContent>
+            <div className='flex justify-center'>
+            <Select value={language} onValueChange={(val) => setLanguage(val)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="javascript">JavaScript</SelectItem>
+                  <SelectItem value="python">Python</SelectItem>
+                  <SelectItem value="java">Java</SelectItem>
+                  <SelectItem value="cpp">C++</SelectItem>
+                </SelectContent>
             </Select>
             </div>
             <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
