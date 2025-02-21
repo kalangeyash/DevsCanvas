@@ -42,11 +42,12 @@ function App() {
   const [roomId, setRoomId] = useState("");
   const[userName,setUserName] = useState("")
   const [language,setLanguage] = useState("javascript")
-  const [code,setCode] = useState("")
+  const [code,setCode] = useState(" // start code here ...  ")
   const [copySuccess,setCopySuccess] = useState("")
   const [users,setUsers] = useState([]);
   const [typing,setTyping] = useState("")
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 useEffect(()=>{
   socket.on("userJoined",(users)=>{
@@ -103,6 +104,12 @@ useEffect(()=>{
     },2000)
  }
  const leaveRoom = () =>{
+  socket.emit("leaveRoom")
+  setJoined(false);
+  setRoomId("");
+  setUserName("");
+  setCode(" // start code here ... ");
+  setLanguage("javascript")
 
  }
  const handleCodeChange = (newCode = "")=>{
@@ -182,73 +189,89 @@ const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 
   return(  
     
-      <div className='h-max '>
-        <Editor className='w-max h-screen -mt-8 mx-1.5' width={1460} height={"100%"} defaultLanguage={language} language={language} value={code} onChange={handleCodeChange} theme='vs-dark' options={{
-          minimap :{enabled : false},
-          fontSize : 14 ,
-        }} loading/>
-
-        <div> 
-        <SidebarProvider>
-      <Sidebar className="w-[300px]">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>DevsCanvas</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-            <div className='mt-8 flex flex-col '>
-              <p className='px-4'>Room Code : {roomId} </p> 
-              <Button className='mx-16 m-4' onClick={copyRoomId} >
-                Copy Id
-              </Button>
-              {copySuccess &&<span className='text-green-400'>{copySuccess}</span>}
-            </div>
-            <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-            <div className='p-2'>
-              <p className='text-xl pb-4'>Users in Room</p>
-              <ul className='text-lg p-4'>
-                  {/* <li>YASH</li>
-                  <li>Aditya</li>
-                  <li>KAMNA</li> */}
-                  {
-                    users.map((user,index)=>(
-                      <li key={index}>
-                        {user}
-                      </li>
-                    ))
-                  }
-              </ul>
-            </div>
-            <div>
-              <p>
-                {typing}
-              </p>
-            </div>
-            <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-            <div className='flex justify-center'> 
-              <select 
-        className="w-[180px] p-2 border rounded-md bg-gray-500" 
-        value={language} 
-        onChange={handleLanguageChange}
-      >
-        <option value="javascript">JavaScript</option>
-        <option value="python">Python</option>
-        <option value="java">Java</option>
-        <option value="cpp">C++</option>
-      </select>
-            </div>
-            <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-            <Button className='mx-16 mt-4' onClick={leaveRoom} >
-                Leave Room
-              </Button>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent> 
-    </Sidebar>
-    </SidebarProvider>
-      </div>  
-      </div>
+    <div className="h-max w-screen flex flex-col lg:flex-row">
+    {/* Editor Section */}
+    <div className='w-screen'>
+    <Editor
+      className="flex-1 h-screen -mt-8 mx-1.5"
+      width={"100%"}
+      height={"100%"}
+      defaultLanguage={language}
+      language={language}
+      value={code}
+      onChange={handleCodeChange}
+      theme="vs-dark"
+      options={{
+        minimap: { enabled: false },
+        fontSize: 14,
+      }}
+      loading
+    />
+    </div>
+  
+ 
+    <button
+      className="lg:hidden p-2 m-2 bg-gray-700 text-white rounded-md"
+      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+    >
+      {isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+    </button>
+  
+    {/* Sidebar */}
+    <div className={`${isSidebarOpen ? "block" : "hidden"} xl:block`}>
+      <SidebarProvider>
+        <Sidebar className="w-[300px] bg-gray-800 text-white h-screen">
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>DevsCanvas</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <div className="mt-8 flex flex-col">
+                    <p className="px-4">Room Code: {roomId}</p>
+                    <Button className="mx-16 m-4" onClick={copyRoomId}>
+                      Copy Id
+                    </Button>
+                    {copySuccess && (
+                      <span className="text-green-400">{copySuccess}</span>
+                    )}
+                  </div>
+                  <hr className="h-px my-8 bg-gray-700 border-0" />
+                  <div className="p-2">
+                    <p className="text-xl pb-4">Users in Room</p>
+                    <ul className="text-lg p-4">
+                      {users.map((user, index) => (
+                        <li key={index}>{user}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p>{typing}</p>
+                  </div>
+                  <hr className="h-px my-8 bg-gray-700 border-0" />
+                  <div className="flex justify-center">
+                    <select
+                      className="w-[180px] p-2 border rounded-md bg-gray-500"
+                      value={language}
+                      onChange={handleLanguageChange}
+                    >
+                      <option value="javascript">JavaScript</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
+                  </div>
+                  <hr className="h-px my-8 bg-gray-700 border-0" />
+                  <Button className="mx-16 mt-4" onClick={leaveRoom}>
+                    Leave Room
+                  </Button>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>
+    </div>
+  </div>
 )
 }
 
