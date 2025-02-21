@@ -22,13 +22,13 @@ import {
   SidebarMenu,
 } from "@/components/ui/sidebar"
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select"
 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,7 @@ const socket = io(`http://localhost:5080`);
 function App() {
 
   const [joined,setJoined] = useState(false)
-  const [roomId, setRoomId] = useState("")
+  const [roomId, setRoomId] = useState("");
   const[userName,setUserName] = useState("")
   const [language,setLanguage] = useState("javascript")
   const [code,setCode] = useState("")
@@ -68,10 +68,16 @@ useEffect(()=>{
       setTyping("");
     }, 1000);
   })
+
+  socket.on("languageUpdate",(newLanguage)=>{
+    setLanguage(newLanguage)
+  })
+
   return ()=>{
     socket.off("userJoined")
     socket.off("codeUpdate")
     socket.off("userTyping")
+    socket.off("languageUpdate")
   }
 },[])
 
@@ -104,7 +110,29 @@ useEffect(()=>{
    socket.emit("codeChange",{roomId,code:newCode})
    socket.emit("typing",{roomId,userName})
  }
-  
+//  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>)=>{
+//   const newLanguage = e.target.value
+//   setLanguage(newLanguage)
+//   socket.emit("languageChange",{roomId,language:newLanguage})
+//  }
+const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const newLanguage = e.target.value;
+  setLanguage(newLanguage);
+
+  if (!roomId) {
+    console.error("roomId is undefined, cannot emit event.");
+    return;
+  }
+
+  if (!socket.connected) {
+    console.error("Socket is not connected!");
+    return;
+  }
+
+  console.log("Emitting languageChange event:", { roomId, language: newLanguage });
+
+  socket.emit("languageChange", { roomId, language: newLanguage });
+};
 
 
   if(!joined)
@@ -197,18 +225,17 @@ useEffect(()=>{
               </p>
             </div>
             <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-            <div className='flex justify-center'>
-            <Select value={language} onValueChange={(val) => setLanguage(val)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="javascript">JavaScript</SelectItem>
-                  <SelectItem value="python">Python</SelectItem>
-                  <SelectItem value="java">Java</SelectItem>
-                  <SelectItem value="cpp">C++</SelectItem>
-                </SelectContent>
-            </Select>
+            <div className='flex justify-center'> 
+              <select 
+        className="w-[180px] p-2 border rounded-md bg-gray-500" 
+        value={language} 
+        onChange={handleLanguageChange}
+      >
+        <option value="javascript">JavaScript</option>
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+      </select>
             </div>
             <hr className="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
             <Button className='mx-16 mt-4' onClick={leaveRoom} >
