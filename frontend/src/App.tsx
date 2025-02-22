@@ -3,6 +3,12 @@ import './App.css'
 import { ThemeProvider } from "@/components/theme-provider"
 import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react'
+import {
+  AnimatedSpan,
+  Terminal,
+  TypingAnimation,
+} from "./components/magicui/terminal";
+ 
 
 import {
   Card,
@@ -48,8 +54,10 @@ function App() {
   const [typing,setTyping] = useState("")
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [output, setOutput] = useState("")
+  const [version, ] = useState("*")
 
-useEffect(()=>{
+  useEffect(()=>{
   socket.on("userJoined",(users)=>{
     setUsers(users)
   })
@@ -73,12 +81,17 @@ useEffect(()=>{
   socket.on("languageUpdate",(newLanguage)=>{
     setLanguage(newLanguage)
   })
+  
+  socket.on("codeResponse",(response)=>{
+    setOutput(response.run.output)
+  })
 
   return ()=>{
     socket.off("userJoined")
     socket.off("codeUpdate")
     socket.off("userTyping")
     socket.off("languageUpdate")
+    socket.off("codeResponse")
   }
 },[])
 
@@ -141,6 +154,9 @@ const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
   socket.emit("languageChange", { roomId, language: newLanguage });
 };
 
+const runCode = ()=>{
+  socket.emit("compileCode",{code,roomId,language,version})
+}
 
   if(!joined)
   {
@@ -150,52 +166,49 @@ const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     //             <UserNotJoined/>
     //       </ThemeProvider>
     // </div>
-    <div className='flex justify-center mt-40'>
-    <ThemeProvider  defaultTheme="dark" storageKey="vite-ui-theme">
-    <Card className="w-[400px] h-[450px]">
-      <CardHeader>
-        <CardTitle className="font-bold text-2xl ">Create or Join project</CardTitle>
-        <CardDescription></CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5 p-2">
-              <Label htmlFor="name" className="pb-5">Room Id</Label>
-              <Input  id="name" placeholder="---" value={roomId} onChange={(e) =>{
-                setRoomId(e.target.value)
-              }} />
+<div className="flex min-h-screen items-center justify-center px-4">
+  <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <div className="flex flex-col items-center space-y-6">
+      <Terminal>
+        <TypingAnimation>&gt; Welcome to DevsCanvas</TypingAnimation>
+      </Terminal>
+
+      <Card className="w-full max-w-[400px] h-auto">
+        <CardHeader>
+          <CardTitle className="font-bold text-2xl text-center">Create or Join Project</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4">
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="roomId" className="pb-2">Room ID</Label>
+              <Input id="roomId" placeholder="---" value={roomId} onChange={(e) => setRoomId(e.target.value)} />
             </div>
-            <div className="flex flex-col space-y-1.5 p-2">
-              <Label htmlFor="name" className="pb-5">Name</Label>
-              <Input id="name" placeholder="Your Name" value={userName} onChange={(e) =>{
-                setUserName(e.target.value)
-              }}/>
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="userName" className="pb-2">Name</Label>
+              <Input id="userName" placeholder="Your Name" value={userName} onChange={(e) => setUserName(e.target.value)} />
             </div>
-            <div className="flex flex-col space-y-1.5">
-            </div>
-          </div>
-        </form>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-1.5 ">
-        
-        <Button onClick={joinRoom}>Join Room</Button>
-      </CardFooter>
-    </Card>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col items-center">
+          <Button className="w-full" onClick={joinRoom}>Join Room</Button>
+        </CardFooter>
+      </Card>
+    </div>
   </ThemeProvider>
 </div>
+
       )
   }
 
   return(  
     
-    <div className="h-max w-screen flex flex-col lg:flex-row">
+    <div className="mx-14 w-screen h-screen lg:flex-row">
     {/* Editor Section */}
-    <div className='w-screen'>
+    {/* <div className='w-screen h-screen'> */}
     <Editor
-      className="flex-1 h-screen -mt-8 mx-1.5"
+      className="flex-1  -mt-8 mx-2 "
       width={"100%"}
-      height={"100%"}
+      height={"60%"}
       defaultLanguage={language}
       language={language}
       value={code}
@@ -207,15 +220,14 @@ const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       }}
       loading
     />
-    </div>
-  
- 
-    <button
-      className="lg:hidden p-2 m-2 bg-gray-700 text-white rounded-md"
-      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-    >
-      {isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
-    </button>
+
+    {/* </div> */}
+      <div className='flex'>
+                <Button className='bg-slate-50 mx-4' onClick={runCode}>Execute</Button>
+                <div className='border-solid  border-gray-100'>
+                <textarea className='text-white  bg-black h-[300px] w-screen ' value={output} readOnly placeholder='Output will appear here >>>' />
+                </div>
+      </div>
   
     {/* Sidebar */}
     <div className={`${isSidebarOpen ? "block" : "hidden"} xl:block`}>
@@ -264,7 +276,7 @@ const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
                   <Button className="mx-16 mt-4" onClick={leaveRoom}>
                     Leave Room
                   </Button>
-                </SidebarMenu>
+                </SidebarMenu>        
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>

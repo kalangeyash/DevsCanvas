@@ -3,8 +3,12 @@ import http from "http";
 import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
+import axios from "axios";
 
-type RoomMap = Map<string, Set<string>>;
+type RoomData = {
+  users: Set<string>; // Users in the room
+  output?: string; // Stores compiled code output
+};
 
 declare global {
   var __dirname: string;
@@ -20,8 +24,7 @@ const io = new Server(server, {
     origin: "*",
   },
 });
-
-const rooms: RoomMap = new Map();
+const rooms: Map<string, RoomData> = new Map();
 
 io.on("connection", (socket) => {
   console.log("User Connected", socket.id);
@@ -32,9 +35,8 @@ io.on("connection", (socket) => {
   socket.on("join", ({ roomId, userName }: { roomId: string; userName: string }) => {
     if (currentRoom) {
       socket.leave(currentRoom);
-      rooms.get(currentRoom)?.delete(currentUser!);
-      io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
-
+      rooms.get(currentRoom)?.users.delete(currentUser!); // Correctly deleting user
+      io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom)?.users || []));
     }
 
     currentRoom = roomId;
@@ -43,39 +45,36 @@ io.on("connection", (socket) => {
     socket.join(roomId);
 
     if (!rooms.has(roomId)) {
-      rooms.set(roomId, new Set());
+      rooms.set(roomId, { users: new Set() }); 
     }
 
-    rooms.get(roomId)?.add(userName);
-    io.to(roomId).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
-    // console.log("user joined", roomId)
+    rooms.get(roomId)?.users.add(userName); 
+    io.to(roomId).emit("userJoined", Array.from(rooms.get(currentRoom)?.users || []));
   });
 
   socket.on("codeChange", ({ roomId, code }: { roomId: string; code: string }) => {
     socket.to(roomId).emit("codeUpdate", code);
   });
+
   socket.on("leaveRoom", () => {
     if (currentRoom && currentUser) {
-      const roomUsers: Set<string> | undefined = rooms.get(currentRoom);
-      
-      if (roomUsers) {
-        roomUsers.delete(currentUser);
-        io.to(currentRoom).emit("userJoined", Array.from(roomUsers));
-        
-        // Remove empty rooms to free memory
-        if (roomUsers.size === 0) {
+      const room = rooms.get(currentRoom);
+
+      if (room) {
+        room.users.delete(currentUser); // : Deleting user properly
+        io.to(currentRoom).emit("userJoined", Array.from(room.users));
+
+        if (room.users.size === 0) {
           rooms.delete(currentRoom);
         }
       }
-  
+
       socket.leave(currentRoom);
-  
-      // Reset user state after leaving
+
       currentRoom = null;
       currentUser = null;
     }
   });
-  
 
   socket.on("typing", ({ roomId, userName }: { roomId: string; userName: string }) => {
     socket.to(roomId).emit("userTyping", userName);
@@ -85,10 +84,33 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("languageUpdate", language);
   });
 
+  socket.on("compileCode", async ({ code, roomId, language, version }) => {
+    if (rooms.has(roomId)) {
+      try {
+        const room = rooms.get(roomId);
+
+        const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+          language,
+          version,
+          files: [{ content: code }],
+        });
+
+        if (room) {
+          room.output = response.data.run.output; 
+        }
+
+        io.to(roomId).emit("codeResponse", response.data);
+      } catch (error) {
+        console.error("Compilation Error:", error);
+        io.to(roomId).emit("codeResponse", { error: "Compilation failed" });
+      }
+    }
+  });
+
   socket.on("disconnect", () => {
     if (currentRoom && currentUser) {
-      rooms.get(currentRoom)?.delete(currentUser);
-      io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom) || []));
+      rooms.get(currentRoom)?.users.delete(currentUser); 
+      io.to(currentRoom).emit("userJoined", Array.from(rooms.get(currentRoom)?.users || []));
     }
     console.log("User Disconnected");
   });
