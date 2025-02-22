@@ -171,6 +171,7 @@ const runCode = ()=>{
     <div className="flex flex-col items-center space-y-6">
       <Terminal>
         <TypingAnimation>&gt; Welcome to DevsCanvas</TypingAnimation>
+        <TypingAnimation delay={1000}>&gt; Code , Collabrate and Help</TypingAnimation>
       </Terminal>
 
       <Card className="w-[400px] max-w-[400px] h-[350px]">
