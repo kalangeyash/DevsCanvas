@@ -4,7 +4,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react'
 import {
-  AnimatedSpan,
   Terminal,
   TypingAnimation,
 } from "./components/magicui/terminal";
@@ -13,7 +12,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -55,7 +53,13 @@ function App() {
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [output, setOutput] = useState("")
-  const [version, ] = useState("*")
+  const [version, setVersion] = useState("*")
+  
+  const notsetIsSidebarOpen = ()=>{
+    setIsSidebarOpen(isSidebarOpen)
+    setVersion(version);
+  }
+   notsetIsSidebarOpen;
 
   useEffect(()=>{
   socket.on("userJoined",(users)=>{
@@ -166,7 +170,7 @@ const runCode = ()=>{
     //             <UserNotJoined/>
     //       </ThemeProvider>
     // </div>
-<div className="flex min-h-screen items-center justify-center px-4">
+<div className="flex mt-40 items-center justify-center px-4">
   <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
     <div className="flex flex-col items-center space-y-6">
       <Terminal>
