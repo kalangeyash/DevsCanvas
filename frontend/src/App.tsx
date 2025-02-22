@@ -173,7 +173,7 @@ const runCode = ()=>{
         <TypingAnimation>&gt; Welcome to DevsCanvas</TypingAnimation>
       </Terminal>
 
-      <Card className="w-full max-w-[400px] h-auto">
+      <Card className="w-[400px] max-w-[400px] h-[350px]">
         <CardHeader>
           <CardTitle className="font-bold text-2xl text-center">Create or Join Project</CardTitle>
         </CardHeader>
