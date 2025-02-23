@@ -39,7 +39,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
-const socket = io(`http://localhost:5080`);
+const socket = io(`https://devscanvas.onrender.com:5080`);
 function App() {
 
   const [joined,setJoined] = useState(false)
