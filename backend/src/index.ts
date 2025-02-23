@@ -118,7 +118,7 @@ io.on("connection", (socket) => {
 
 const port = process.env.PORT || 5080;
 
-app.use(express.static(path.join(__dirname, "/frontend/dist")));
+app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
 app.get("*", (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
